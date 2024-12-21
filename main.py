@@ -2,6 +2,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
 from aiogram.types import Message
 from nekot import *
+import linecache, random
 
 # Создаем объекты бота и диспетчера
 bot = Bot(token=BOT_TOKEN)
@@ -32,6 +33,13 @@ async def process_what_do_you_do_command(message: Message):
     await message.answer(
         'Я существую чтобы написать "Привет мир!"'
     )
+
+@dp.message(Command(commands=['generate']))
+async def generate(message: Message):
+    await message.answer(
+        linecache.getline("surnames.txt", random.randint(1,14650))
+    )
+
 
 # Этот хэндлер будет срабатывать на любые ваши текстовые сообщения,
 # кроме команд "/start" и "/help"
