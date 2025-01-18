@@ -1,7 +1,10 @@
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from nekot import *
+from funsctions_to_import import *
+
 import linecache, random
 
 # Создаем объекты бота и диспетчера
@@ -34,14 +37,30 @@ async def process_what_do_you_do_command(message: Message):
 
 @dp.message(Command(commands=['generate']))
 async def generate(message: Message):
+    builder = InlineKeyboardBuilder()
+    builder.button(text="мужской", callback_data="option_male")
+    builder.button(text="женский", callback_data="option_female")
     await message.answer(
-        linecache.getline("names.txt", random.randint(1, 615)).strip() + ' ' +
-        linecache.getline("surnames.txt", random.randint(1, 14650))
+        'Выберите пол', reply_markup=builder.as_markup()
     )
+
+
+@dp.callback_query()
+async def name_callback(callback_query: CallbackQuery):
+    if callback_query.data == "option_male":
+        await callback_query.message.answer(
+            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_male()}")
+    elif callback_query.data == "option_female":
+        await callback_query.message.answer(
+            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{gen_female()}")
 
 
 # Этот хэндлер будет срабатывать на любые ваши текстовые сообщения,
 # кроме команд
+@dp.message()
+async def echo(message: Message):
+    print(message.text)
+    await message.reply(text=message.text)
 
 
 if __name__ == '__main__':
