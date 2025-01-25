@@ -65,24 +65,33 @@ async def generate(message: Message):
     type = data[id]["type"]
     if type == "russian":
         builder = InlineKeyboardBuilder()
-        builder.button(text="мужской", callback_data="option_male")
-        builder.button(text="женский", callback_data="option_female")
+        builder.button(text="мужской", callback_data="option_russ_male")
+        builder.button(text="женский", callback_data="option_russ_female")
         await message.answer(
             'Выберите пол', reply_markup=builder.as_markup()
         )
     elif type == "foreign":
-        print("+")
+        builder = InlineKeyboardBuilder()
+        builder.button(text="мужской", callback_data="option_foreign_male")
+        builder.button(text="женский", callback_data="option_foreign_female")
+        await message.answer(
+            'Выберите пол', reply_markup=builder.as_markup()
+        )
 
 
 @dp.callback_query()
 async def name_callback(callback_query: CallbackQuery):
+    await callback_query.answer()
     id = callback_query.from_user.id
-    if callback_query.data == "option_male":
+    if callback_query.data == "option_russ_male":
         await callback_query.message.answer(
-            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_male()}")
-    elif callback_query.data == "option_female":
+            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_russ_male()}")
+    elif callback_query.data == "option_russ_female":
         await callback_query.message.answer(
-            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{gen_female()}")
+            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{gen_russ_female()}")
+    elif callback_query.data == "option_foreign_male":
+        await callback_query.message.answer(
+            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_foreign_male()}")
     if callback_query.data == "option_russian":
         data[id]["type"] = "russian"
         await callback_query.message.answer("Вы выбрали русский тип имени и фамилии.")
