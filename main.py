@@ -53,6 +53,7 @@ async def choice_type(message: Message):
     builder = InlineKeyboardBuilder()
     builder.button(text="Русское", callback_data="option_russian")
     builder.button(text="Иностранное", callback_data="option_foreign")
+    builder.button(text="Фентезийное", callback_data="option_fantasy")
 
     await message.answer(
         'Выберите тип имени и фамилии, какое будет имя и фамилия.(Тип будет использоваться для всех следующих генерациях).'
@@ -77,6 +78,14 @@ async def generate(message: Message):
         await message.answer(
             'Выберите пол', reply_markup=builder.as_markup()
         )
+    elif type == "fantasy":
+        builder = InlineKeyboardBuilder()
+        builder.button(text="мужской", callback_data="option_fantasy_male")
+        builder.button(text="женский", callback_data="option_fantasy_female")
+        await message.answer(
+            'Выберите пол', reply_markup=builder.as_markup()
+        )
+
 
 
 @dp.callback_query()
@@ -92,12 +101,21 @@ async def name_callback(callback_query: CallbackQuery):
     elif callback_query.data == "option_foreign_male":
         await callback_query.message.answer(
             f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_foreign_male()}")
+    elif callback_query.data == "option_foreign_female":
+        await callback_query.message.answer(
+            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{gen_foreign_female()}")
+    elif callback_query.data == "option_fantasy_male":
+        await callback_query.message.answer(
+            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_fantasy_male()}")
     if callback_query.data == "option_russian":
         data[id]["type"] = "russian"
         await callback_query.message.answer("Вы выбрали русский тип имени и фамилии.")
     elif callback_query.data == "option_foreign":
         data[id]["type"] = "foreign"
         await callback_query.message.answer("Вы выбрали иностранный тип имени и фамилии.")
+    elif callback_query.data == "option_fantasy":
+        data[id]["type"] = "fantasy"
+        await callback_query.message.answer("Вы выбрали фентезийный тип имени и фамилии.")
 
 
 # Этот хэндлер будет срабатывать на любые ваши текстовые сообщения,

@@ -22,3 +22,7 @@ def gen_russ_female():
 def gen_foreign_male():
     return linecache.getline("names_foreign_m.txt", random.randint(1, 195)).strip() + ' ' + \
         linecache.getline("surnames_foreign.txt", random.randint(1, 199))
+
+def gen_fantasy_male():
+    return linecache.getline("names_fantasy_m.txt", random.randint(1, 242)).strip() + ' ' + \
+        linecache.getline("surnames_fantasy.txt", random.randint(1, 156))
