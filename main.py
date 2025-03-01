@@ -1,3 +1,5 @@
+import json
+
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
@@ -17,39 +19,34 @@ order = {
 
 }
 
-
-# Этот хэндлер будет срабатывать на команду "/start"
+with open("data.json", "r") as dt:
+    data = json.load(dt)
+data = {int(id): data[id] for id in data}
+print(data)
 @dp.message(Command(commands=["start"]))
 async def process_start_command(message: Message):
-    await message.answer('Привет!\nНеважно как меня зовут, просто напиши мне имя!')
+    await message.answer('Привет!\n'
+                         'Я помогаю творческим людам с недостатком фантазии и комбинирую имена и фамилии. \n'
+                         'Не хочу чтобы вы затрудняли себя этим). Советуб для начала вызвать команду /help  ')
     id = message.from_user.id
-    if id not in order:
-        order[id] = 'name'
     if id not in data:
-        data[id] = {}
+        data[id] = {"type": "russian", 'favorite': []}
     print(f'Ваше имя: {id}')
 
 
-# Этот хэндлер будет срабатывать на команду "/help"
 @dp.message(Command(commands=['help']))
 async def process_help_command(message: Message):
     await message.answer(
-        '/what_do_you_do \n'
-        '/generate'
-    )
-
-
-@dp.message(Command(commands=['what_do_you_do']))
-async def process_what_do_you_do_command(message: Message):
-    await message.answer(
-        'Я помогаю творческим людам с недостатком фантазии и комбинирую имена и фамилии. \n'
-        'Не хочу чтобы вы затрудняли себя этим)  '
+        '/help - вызвать это сообщение \n'
+        '/choice_type - выбрать тип имени и фамили, пример: русское, иностранное и т.д. (Изначальное значение - русские имена и фамилии) \n'
+        '/generate - вызвать команду генерации именим и фамилии'
+        '/favorite - вызвать список избранных имен'
+        '/clean_favorite - очистить список избранных.'
     )
 
 
 @dp.message(Command(commands=['choice_type']))
 async def choice_type(message: Message):
-
     builder = InlineKeyboardBuilder()
     builder.button(text="Русское", callback_data="option_russian")
     builder.button(text="Иностранное", callback_data="option_foreign")
@@ -60,10 +57,22 @@ async def choice_type(message: Message):
         , reply_markup=builder.as_markup()
     )
 
+
 @dp.message(Command(commands=['generate']))
 async def generate(message: Message):
     id = message.from_user.id
+
+    if id not in data:
+        data[id] = {"type": "russian", 'favorite': []}
     type = data[id]["type"]
+
+    name = message.from_user.full_name
+    data[id]["name"] = name
+    username = message.from_user.username
+    data[id]["username"] = username
+    with open("data.json", "w") as dt:
+        json.dump(data, dt)
+
     if type == "russian":
         builder = InlineKeyboardBuilder()
         builder.button(text="мужской", callback_data="option_russ_male")
@@ -87,26 +96,50 @@ async def generate(message: Message):
         )
 
 
-
-@dp.callback_query()
+@dp.callback_query(lambda c:c.data.startswith("option"))
 async def name_callback(callback_query: CallbackQuery):
     await callback_query.answer()
     id = callback_query.from_user.id
+    if id not in data:
+        data[id] = {"type": "russian", 'favorite': []}
     if callback_query.data == "option_russ_male":
+        response = gen_russ_male()
+        builder = InlineKeyboardBuilder()
+        builder.button(text="в избранное", callback_data=f"favorite_{response}")
         await callback_query.message.answer(
-            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_russ_male()}")
+            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{response}",reply_markup = builder.as_markup())
+
     elif callback_query.data == "option_russ_female":
+        response = gen_russ_female()
+        builder = InlineKeyboardBuilder()
+        builder.button(text="в избранное", callback_data=f"favorite_{response}")
         await callback_query.message.answer(
-            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{gen_russ_female()}")
+            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{response}",reply_markup=builder.as_markup())
     elif callback_query.data == "option_foreign_male":
+        response = gen_foreign_male()
+        builder = InlineKeyboardBuilder()
+        builder.button(text="в избранное", callback_data=f"favorite_{response}",reply_markup = builder.as_markup())
         await callback_query.message.answer(
-            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_foreign_male()}")
+            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{response}",reply_markup = builder.as_markup())
     elif callback_query.data == "option_foreign_female":
+        response = gen_foreign_female()
+        builder = InlineKeyboardBuilder()
+        builder.button(text="в избранное", callback_data=f"favorite_{response}",reply_markup = builder.as_markup())
         await callback_query.message.answer(
-            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{gen_foreign_female()}")
+            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{response}",reply_markup = builder.as_markup())
     elif callback_query.data == "option_fantasy_male":
+        response = gen_fantasy_male()
+        builder = InlineKeyboardBuilder()
+        builder.button(text="в избранное", callback_data=f"favorite_{response}")
         await callback_query.message.answer(
-            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{gen_fantasy_male()}")
+            f"Вы выбрали мужское имя и фамилию, продолжаю процесс генерации...\n{response}",reply_markup = builder.as_markup())
+    elif callback_query.data == "option_fantasy_female":
+        response = gen_fantasy_female()
+        builder = InlineKeyboardBuilder()
+        builder.button(text="в избранное", callback_data=f"favorite_{response}")
+        await callback_query.message.answer(
+            f"Вы выбрали женское имя и фамилию, продолжаю процесс генерации...\n{response}",reply_markup = builder.as_markup())
+
     if callback_query.data == "option_russian":
         data[id]["type"] = "russian"
         await callback_query.message.answer("Вы выбрали русский тип имени и фамилии.")
@@ -117,25 +150,61 @@ async def name_callback(callback_query: CallbackQuery):
         data[id]["type"] = "fantasy"
         await callback_query.message.answer("Вы выбрали фентезийный тип имени и фамилии.")
 
+@dp.callback_query(lambda c:c.data.startswith("favorite"))
+async def favorite_callback(callback_query: CallbackQuery):
+    await callback_query.answer()
+    id = callback_query.from_user.id
+    _ , name = callback_query.data.split('_')
+    name = name.strip()
+    if name not in data[id]['favorite']:
+        data[id]['favorite'].append(name)
+    print(data[id]["favorite"])
 
-# Этот хэндлер будет срабатывать на любые ваши текстовые сообщения,
-# кроме команд
+    with open("data.json", "w") as dt:
+        json.dump(data, dt)
+
+@dp.message(Command(commands=['favorite']))
+async def favorite_list(message: Message):
+    id = message.from_user.id
+    print(type(id))
+
+    answer = ''
+    for i in data[id]["favorite"][::-1]:
+        answer += i +'\n'
+
+    await message.answer(f"Ваш список избранных: \n{answer}")
+
+@dp.message(Command(commands=['clean_favorite']))
+async def favorite_list(message: Message):
+    id = message.from_user.id
+    data[id]["favorite"]=[]
+
+    with open("data.json", "w") as dt:
+        json.dump(data, dt)
+
+    await message.answer("ОЧИСТКА ЕРЕСИ прошла успешно!")
+
+
+@dp.message(Command(commands=['see']))
+async def see(message: Message):
+    id = message.from_user.id
+    if id == 8133985440:
+        await message.answer("Добро пожаловать, инквизитор.")
+        answer = ''
+        for i in data:
+            answer += f'\nid пользователя: {i} \n'
+            answer += f'имя пользователя: {data[i]["name"]} \n'
+            answer += f'имя пользователя: {data[i]["username"]} \n'
+            answer +='\n'
+            for j in data[i]["favorite"][::-1]:
+                answer += j + '\n'
+        await message.answer(f"Ваш список избранных: \n{answer}")
+
+
 @dp.message()
 async def echo(message: Message):
     id = message.from_user.id
     print(message.text)
-    if id in data:
-        if order[id] == "name":
-            data[id][order[id]] = message.text
-            order[id] = 'surname'
-            await message.answer('Напишите вашу фамилию')
-        elif order[id] == 'surname':
-            data[id][order[id]] = message.text
-            order[id] = None
-            await message.answer(f"Имя и фамилия успешно записаны.Вот они: {data[id]['name'], data[id]['surname']}")
-    else:
-        await message.reply(text=message.text)
-    print(data)
 
 
 if __name__ == '__main__':
