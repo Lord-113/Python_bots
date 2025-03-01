@@ -1,7 +1,7 @@
 import json
 
 from aiogram import Bot, Dispatcher
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
 from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from nekot import *
@@ -27,7 +27,7 @@ print(data)
 async def process_start_command(message: Message):
     await message.answer('Привет!\n'
                          'Я помогаю творческим людам с недостатком фантазии и комбинирую имена и фамилии. \n'
-                         'Не хочу чтобы вы затрудняли себя этим). Советуб для начала вызвать команду /help  ')
+                         'Не хочу чтобы вы затрудняли себя этим). Советую для начала вызвать команду /help  ')
     id = message.from_user.id
     if id not in data:
         data[id] = {"type": "russian", 'favorite': []}
@@ -38,15 +38,15 @@ async def process_start_command(message: Message):
 async def process_help_command(message: Message):
     await message.answer(
         '/help - вызвать это сообщение \n'
-        '/choice_type - выбрать тип имени и фамили, пример: русское, иностранное и т.д. (Изначальное значение - русские имена и фамилии) \n'
-        '/generate - вызвать команду генерации именим и фамилии'
-        '/favorite - вызвать список избранных имен'
+        '/choose_type - выбрать тип имени и фамили, пример: русское, иностранное и т.д. (Изначальное значение - русские имена и фамилии) \n'
+        '/generate - вызвать команду генерации имени и фамилии \n'
+        '/favorite - вызвать список избранных имен \n'
         '/clean_favorite - очистить список избранных.'
     )
 
 
-@dp.message(Command(commands=['choice_type']))
-async def choice_type(message: Message):
+@dp.message(Command(commands=['choose_type']))
+async def choose_type(message: Message):
     builder = InlineKeyboardBuilder()
     builder.button(text="Русское", callback_data="option_russian")
     builder.button(text="Иностранное", callback_data="option_foreign")
@@ -199,6 +199,27 @@ async def see(message: Message):
             for j in data[i]["favorite"][::-1]:
                 answer += j + '\n'
         await message.answer(f"Ваш список избранных: \n{answer}")
+
+@dp.message(Command(commands=['go_to_test']))
+async def go_to_test (message: Message, command: CommandObject):
+    id = message.from_user.id
+
+    if id == 8133985440:
+        await message.answer("Добро пожаловать, инквизитор.")
+        if command.args:
+            message_for_users = command.args
+        print(command.args)
+        for i in data:
+            await error_check(i, message_for_users)
+
+
+async def error_check(id, message_for_users):
+    try:
+        await bot.send_message(id, message_for_users)
+    except:
+        print(f"bot was blocked by the user {data[id]['name']}")
+    else:
+        print("message sent")
 
 
 @dp.message()
